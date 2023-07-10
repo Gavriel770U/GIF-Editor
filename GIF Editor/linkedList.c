@@ -32,7 +32,7 @@ Frame* createFrame(char* name, unsigned int duration, char* path)
 		exit(MEMORY_ALLOCATION_ERROR_CODE);
 	}
 	strcpy(frame->name, name);
-	frame->name[length] = '\0';
+	frame->name[length] = NULL_CHAR;
 
 	frame->duration = duration;
 
@@ -44,8 +44,7 @@ Frame* createFrame(char* name, unsigned int duration, char* path)
 		exit(MEMORY_ALLOCATION_ERROR_CODE);
 	}
 	strcpy(frame->path, path);
-	frame->path[length] = '\0';
-	
+	frame->path[length] = NULL_CHAR;
 
 	return frame; 
 }
@@ -55,16 +54,16 @@ Frame* createFrame(char* name, unsigned int duration, char* path)
 	Input: frame - pointer to a frame to free.
 	Output: None.
 */
-void freeFrame(Frame** frame)
+void freeFrame(Frame* frame)
 {
-	if (!*frame)
+	if (!frame)
 	{
 		return; 
 	}
-	free((*frame)->name); 
-	free((*frame)->path);
-	free(*frame); 
-	*frame = NULL;
+	free(frame->name); 
+	free(frame->path);
+	free(frame); 
+	frame = NULL;
 }
 
 /*
@@ -92,6 +91,61 @@ FrameNode* createFrameNode(Frame* frame)
 	return frameNode;
 }
 
+
+/*
+	Function that frees allocated memory for single FrameNode*.
+	Input: node - pointer to FrameNode* to free.
+	Output: None.
+*/
+void freeFrameNode(FrameNode** node)
+{
+	if (!*node)
+	{
+		return;
+	}
+	freeFrame((*node)->frame);
+	(*node)->next = NULL;
+	free(*node);
+	*node = NULL;
+}
+
+/*
+	Function that frees allocated memory for FrameNode* list.
+	Input: head - pointer to a head node of FrameNode* list.
+	Output: None.
+*/
+void freeFrameNodeList(FrameNode** head)
+{
+	FrameNode* current = *head;
+	FrameNode* next = NULL;
+
+	while (current)
+	{
+		next = current->next;
+		freeFrameNode(&current);
+		current = next;
+	}
+
+	*head = NULL;
+}
+
+/**
+* Function that returns the length of FrameNode* list. 
+* Input: head - head node of FrameNode* list. 
+* Output: length of the list. 
+*/
+int frameNodeListLength(FrameNode* head)
+{
+	FrameNode* current = head;
+	int counter = 0; 
+	while (current)
+	{
+		counter++;
+		current = current->next;
+	}
+	return counter;
+}
+
 /*
 	Function that inserts created FrameNode* created with given Frame* into FrameNode* list.
 	Input: head - pointer to FrameNode* list.
@@ -116,12 +170,82 @@ void insertFrameToList(FrameNode** head, Frame* frame)
 }
 
 /*
+	Function that checks if there is FrameNode* with a given name in a FrameNode* list.
+	Input: head - FrameNode* list head.
+		   name - the name of the frame to find.
+	Output: None.
+*/
+int isFrameNameAlreadyExistsInList(FrameNode* head, char* name)
+{
+	FrameNode* current = head;
+	int count = 1;
+
+	while (current)
+	{
+		if (EQUAL_STRINGS_VALUE == strcmp(current->frame->name, name))
+		{
+			return count;
+		}
+		current = current->next;
+		count++;
+	}
+	//printf("The frame does not exist!\n");
+	return NOT_FOUND;
+}
+
+/*
+	Function that searches for FrameNode* in FrameNode* list with frame property with given name and returns pointer to it. 
+	Input: head - head node inside FrameNode* list.
+		   frameName - the name of the frame to search for. 
+	Output: FrameNode* of the frame found, or NULL if there is no FrameNode* with frame property with frameName.
+*/
+FrameNode* findFrameNodeByFrameNameInList(FrameNode* head, char* frameName)
+{
+	FrameNode* current = head; 
+	while (current)
+	{
+		if (EQUAL_STRINGS_VALUE == strcmp(current->frame->name, frameName))
+		{
+			return current; 
+		}
+		current = current->next; 
+	}
+
+	return NULL;
+}
+
+/*
 	Function that removes a FrameNode* from a FrameNode* list by frame's property name.
 	Input: head - pointer to FrameNode* list. 
 		   frameName - the FrameNode* that has this frame name and has to be deleted.
 	Output: None.
 */
-void removeFrameNodeFromList(FrameNode** head, char* frameName);
+void removeFrameNodeFromList(FrameNode** head, char* frameName)
+{
+	FrameNode* current = *head; 
+	FrameNode* temp = NULL;
+	if (!*head)
+	{
+		return;
+	}
+	else if (EQUAL_STRINGS_VALUE == strcmp((*head)->frame->name, frameName))
+	{
+		*head = (*head)->next;
+		free(current);
+		return;
+	}
+	while (current->next && EQUAL_STRINGS_VALUE != strcmp(current->next->frame->name, frameName))
+	{
+		current = current->next;
+	}
+	if (current->next)
+	{
+		temp = current->next;
+		current->next = temp->next;
+		free(temp);
+		return;
+	}
+}
 
 /*
 	Function that changes a FrameNode* position in a FrameNode* list by frame's property name and given position.
@@ -131,7 +255,14 @@ void removeFrameNodeFromList(FrameNode** head, char* frameName);
 		   NOTE: the indexing starts from 1 to n, where n is the length of the list. 
 	Output: None.
 */
-void changeFrameNodePosition(FrameNode** head, char* frameName, unsigned int newPosition);
+void changeFrameNodePosition(FrameNode** head, char* frameName, int newPosition)
+{
+	Frame* frame = NULL;
+	int currentPosition = isFrameNameAlreadyExistsInList(*head, frameName);
+	int count = 0;
+
+	removeFrameNodeFromList(*head, frameName);
+}
 
 /*
 	Function that changes a FrameNode* duration in a FrameNode* list by frame's property name and given new duration value.
@@ -142,17 +273,11 @@ void changeFrameNodePosition(FrameNode** head, char* frameName, unsigned int new
 */
 void changeFrameNodeDurationInList(FrameNode* head, FrameNode* frameName, unsigned int newDuration)
 {
-	FrameNode* current = head; 
-	while (current)
+	FrameNode* node = findFrameNodeByFrameNameInList(head, frameName);
+	if (node)
 	{
-		if (EQUAL_STRINGS_VALUE == strcmp(current->frame->name, frameName))
-		{
-			current->frame->duration = newDuration;
-			return; 
-		}
-		current = current->next; 
+		node->frame->duration = newDuration;
 	}
-	printf("The frame was not found\n");
 }
 
 /*
@@ -172,29 +297,6 @@ void changeAllFrameNodesDurationsInList(FrameNode* head, unsigned int newDuratio
 }
 
 /*
-	Function that checks if there is FrameNode* with a given name in a FrameNode* list.
-	Input: head - FrameNode* list head.
-		   name - the name of the frame to find.
-    Output: None.
-*/
-int isFrameNameAlreadyExistsInList(FrameNode* head, char* name)
-{
-	FrameNode* current = head;
-	int count = 1;
-
-	while (current)
-	{
-		if (EQUAL_STRINGS_VALUE == strcmp(current->frame->name, name))
-		{
-			return count;
-		}
-		current = current->next;
-		count++;
-	}
-	return NOT_FOUND;
-}
-
-/*
 	Function that prints FrameNode* list.
 	Input: head - FrameNode* list head.
 	Output: None.
@@ -205,45 +307,8 @@ void printFrameNodeList(FrameNode* head)
 	printf("                Name            Duration        Path\n");
 	while (current)
 	{
-		printf("                %s            %u ms        %s\n", current->frame->name, current->frame->duration, current->frame->path);
+		printf("                %s               %u ms        %s\n", current->frame->name, current->frame->duration, current->frame->path);
 		current = current->next;
 	}
 	printf("\n"); 
-}
-
-/*
-	Function that frees allocated memory for single FrameNode*.
-	Input: node - pointer to FrameNode* to free.
-	Output: None.
-*/
-void freeFrameNode(FrameNode** node)
-{
-	if (!*node)
-	{
-		return; 
-	}
-	freeFrame(&((*node)->frame));
-	(*node)->next = NULL;
-	free(*node); 
-	*node = NULL;
-}
-
-/*
-	Function that frees allocated memory for FrameNode* list.
-	Input: head - pointer to a head node of FrameNode* list.
-	Output: None.
-*/
-void freeFrameNodeList(FrameNode** head)
-{
-	FrameNode* current = *head;
-	FrameNode* next = NULL;
-
-	while (current)
-	{
-		next = current->next;
-		freeFrameNode(&current);
-		current = next;
-	}
-
-	*head = NULL;
 }

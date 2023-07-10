@@ -3,11 +3,17 @@
 *         openCV Template     	 *
 **********************************/
 
-#define _CRTDBG_MAP_ALLOC
+/* TODO:
+* 1.4. reduce the amount of code needed for frame insert in the editor's loop
+* 1.5. change position of node function, I got stuck with this function at the end :(
+* 1.6. char* creation function with memory check and imporved fgets
+* 2. save project
+* 3. load project
+*/
+
 #define _CRT_SECURE_NO_WARNINGS
 #define CV_IGNORE_DEBUG_BUILD_GUARD
 
-#include <crtdbg.h>
 #include <opencv2/imgcodecs/imgcodecs_c.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +29,7 @@
 #define FILE_READ_MODE "r"
 
 #define PROJECT_OPTIONS_ERROR_MESSAGE "Invalid choice, try again:\n [0] Create a new project\n [1] Load existing project"
+#define CHANGE_INDEX_ERROR_MESSAGE "The movie contains less frames!\nEnter the new index in the movie you wish to place the frame\n"
 
 typedef enum ProjectOptions
 {
@@ -42,7 +49,10 @@ typedef enum Options
 	PLAY_GIF_OPTION = 7
 } Options;
 
+void improvedFgets(char* buffer, int maxCount, FILE* stream);
+
 bool isFileExist(const char* filePath);
+
 /*
 	Function that saves the project in the given directory.
 	Input: list - FrameNode* list of the frames data.
@@ -67,45 +77,22 @@ void runGifEditor(void);
 
 int main(void)
 {
-
 	runGifEditor();
-
-	/*
-	char* name = "1";
-	char* path = "C:/Users/Magshimim/Desktop/photos/1.png";
-	Frame* frame1 = createFrame(name, 100, path);
-	Frame* frame2 = createFrame("2", 50, "C:/Users/Magshimim/Desktop/photos/2.png");
-	Frame* frame3 = createFrame("3", 100, "C:/Users/Magshimim/Desktop/photos/3.png");
-
-	FrameNode* list = NULL;
-
-	insertFrameToList(&list, frame1);
-	insertFrameToList(&list, frame2); 
-	insertFrameToList(&list, frame3);
-
-	printFrameNodeList(list);
-
-	int i = 0;
-	cvNamedWindow("Display window", CV_WINDOW_AUTOSIZE); //create a window
-	//create an image
-	IplImage* image = cvLoadImage("C:/Users/Magshimim/Desktop/photos/1.png", 1);
-	if (!image)//The image is empty.
-	{
-		printf("could not open image\n");
-	}
-	else
-	{
-		cvShowImage("Display window", image);
-		cvWaitKey(0);
-		system("pause");
-		cvReleaseImage(&image);
-	}
-	*/
-
-	//freeFrameNodeList(&list);
-
 	getchar();
 	return 0;
+}
+
+/*
+*	Function that serves like better fgets. 
+*	Input: buffer - the buffer where the input will be stored.
+*		   maxCount - the maximum length of the input.
+*		   stream - the stream where the input will be inputed.
+*	Output: None.
+*/
+void improvedFgets(char* buffer, int maxCount, FILE* stream)
+{
+	fgets(buffer, maxCount, stream);
+	buffer[strcspn(buffer, ENTER)] = NULL_CHAR;
 }
 
 /*
@@ -177,6 +164,7 @@ void runGifEditor(void)
 	char* name = NULL;
 	unsigned int duration = 0;
 	int input = 0;
+	int index = 0;
 
 	printf("Welcome to Magshimim Movie Maker! what would you like to do?\n [0] Create a new project\n [1] Load existing project\n");
 	input = getIntInput(NEW_PROJECT_OPTION, LOAD_PROJECT_OPTION, PROJECT_OPTIONS_ERROR_MESSAGE);
@@ -209,8 +197,7 @@ void runGifEditor(void)
 					printf("Memory allocation error!\n");
 					exit(MEMORY_ALLOCATION_ERROR_CODE);
 				}
-				fgets(path, MAX_STRING_LENGTH, stdin);
-				path[strcspn(path, ENTER)] = NULL_CHAR;
+				improvedFgets(path, MAX_STRING_LENGTH, stdin);
 
 				printf("Please insert frame duration (in miliseconds):\n");
 				scanf("%u", &duration);
@@ -223,8 +210,7 @@ void runGifEditor(void)
 					printf("Memory allocation error!\n");
 					exit(MEMORY_ALLOCATION_ERROR_CODE);
 				}
-				fgets(name, MAX_STRING_LENGTH, stdin);
-				name[strcspn(name, ENTER)] = NULL_CHAR;
+				improvedFgets(name, MAX_STRING_LENGTH, stdin);
 
 				if (!isFileExist(path))
 				{
@@ -234,25 +220,83 @@ void runGifEditor(void)
 				}
 				else
 				{
+					while (isFrameNameAlreadyExistsInList(list, name))
+					{
+						free(name);
+						printf("The name is already taken, please enter another name\n");
+						name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
+						if (!name)
+						{
+							printf("Memory allocation error!\n");
+							exit(MEMORY_ALLOCATION_ERROR_CODE);
+						}
+						improvedFgets(name, MAX_STRING_LENGTH, stdin);
+					}
 					frame = createFrame(name, duration, path);
 					insertFrameToList(&list, frame);
 				}
 			}
 			else if (REMOVE_FRAME_OPTION == input)
 			{
+				printf("Enter the name of the frame to remove: \n");
+				name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
+				if (!name)
+				{
+					printf("Memory allocation error!\n");
+					exit(MEMORY_ALLOCATION_ERROR_CODE);
+				}
+				improvedFgets(name, MAX_STRING_LENGTH, stdin);
 
+				removeFrameNodeFromList(&list, name);
 			}
 			else if (CHANGE_FRAME_POSITION_OPTION == input)
 			{
+				printf("Enter the name of the frame: \n");
+				name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
+				if (!name)
+				{
+					printf("Memory allocation error!\n");
+					exit(MEMORY_ALLOCATION_ERROR_CODE);
+				}
+				improvedFgets(name, MAX_STRING_LENGTH, stdin);
+
+				if (isFrameNameAlreadyExistsInList(list, name))
+				{
+					printf("Enter the new index in the movie you wish to place the frame\n");
+					index = getIntInput(FIRST_NODE_INDEX, frameNodeListLength(list), CHANGE_INDEX_ERROR_MESSAGE);
+					changeFrameNodePosition(&list, name, index);
+				}
+				else
+				{
+					free(name);
+					name = NULL;
+				}
 
 			}
 			else if (CHANGE_FRAME_DURATION_OPTION == input)
 			{
+				printf("Enter the name of the frame: \n");
+				name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
+				if (!name)
+				{
+					printf("Memory allocation error!\n");
+					exit(MEMORY_ALLOCATION_ERROR_CODE);
+				}
+				improvedFgets(name, MAX_STRING_LENGTH, stdin);
+				
+				printf("Enter the new duration:\n");
+				scanf("%u", &duration);
+				getchar();
 
+				changeFrameNodeDurationInList(list, name, duration);
 			}
 			else if (CHANGE_ALL_FRAMES_DURATION_OPTION == input)
 			{
+				printf("Enter the duration for all frames:\n");
+				scanf("%u", &duration);
+				getchar();
 
+				changeAllFrameNodesDurationsInList(list, duration);
 			}
 			else if (PRINT_ALL_FRAMES_LIST_OPTION == input)
 			{
@@ -266,6 +310,7 @@ void runGifEditor(void)
 		printf("\n");
 	} while (input != EXIT_OPTION);
 
+	freeFrameNodeList(&list);
 
 	printf("Bye!\n");
 }
