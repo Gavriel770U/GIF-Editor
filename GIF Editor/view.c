@@ -7,9 +7,9 @@
 
 /**
 play the movie!!
-display the images each for the duration of the frame one by one and close the window
-input: a linked list of frames to display
-output: none
+display the images each for the duration of the frame one by one and close the window.
+Input: a linked list of frames to display.
+Output: None.
 **/
 void play(FrameNode* list)
 {

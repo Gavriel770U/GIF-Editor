@@ -173,9 +173,10 @@ void insertFrameToList(FrameNode** head, Frame* frame)
 	Function that checks if there is FrameNode* with a given name in a FrameNode* list.
 	Input: head - FrameNode* list head.
 		   name - the name of the frame to find.
+		   notFoundMessage - the message that will be printed if the frame does not exist in the list. 
 	Output: None.
 */
-int isFrameNameAlreadyExistsInList(FrameNode* head, char* name)
+int isFrameNameAlreadyExistsInList(FrameNode* head, char* name, char* notFoundMessage)
 {
 	FrameNode* current = head;
 	int count = 1;
@@ -189,7 +190,10 @@ int isFrameNameAlreadyExistsInList(FrameNode* head, char* name)
 		current = current->next;
 		count++;
 	}
-	//printf("The frame does not exist!\n");
+	if (notFoundMessage)
+	{
+		printf(NOT_FOUND_MESSAGE);
+	}
 	return NOT_FOUND;
 }
 
@@ -258,7 +262,7 @@ void removeFrameNodeFromList(FrameNode** head, char* frameName)
 void changeFrameNodePosition(FrameNode** head, char* frameName, int newPosition)
 {
 	Frame* frame = NULL;
-	int currentPosition = isFrameNameAlreadyExistsInList(*head, frameName);
+	int currentPosition = isFrameNameAlreadyExistsInList(*head, frameName, NOT_FOUND_MESSAGE);
 	int count = 0;
 
 	removeFrameNodeFromList(*head, frameName);

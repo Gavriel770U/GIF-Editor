@@ -10,6 +10,8 @@
 #define FIRST_NODE_INDEX 1
 #define NULL_CHAR '\0'
 #define MEMORY_ALLOCATION_ERROR_CODE 1
+#define NOT_FOUND_MESSAGE "The frame does not exist!\n"
+#define NO_NOT_FOUND_MESSAGE NULL
 
 // Frame struct
 typedef struct Frame
@@ -40,7 +42,7 @@ int frameNodeListLength(FrameNode* head);
 
 void insertFrameToList(FrameNode** head, Frame* frame);
 
-int isFrameNameAlreadyExistsInList(FrameNode* head, char* name);
+int isFrameNameAlreadyExistsInList(FrameNode * head, char* name, char* notFoundMessage);
 
 FrameNode* findFrameNodeByFrameNameInList(FrameNode* head, char* frameName);
 

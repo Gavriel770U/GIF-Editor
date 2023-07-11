@@ -6,7 +6,6 @@
 /* TODO:
 * 1.4. reduce the amount of code needed for frame insert in the editor's loop
 * 1.5. change position of node function, I got stuck with this function at the end :(
-* 1.6. char* creation function with memory check and imporved fgets
 * 2. save project
 * 3. load project
 */
@@ -21,6 +20,7 @@
 #include <opencv2/highgui/highgui_c.h>
 #include <stdbool.h>
 #include "linkedList.h"
+#include "view.h"
 
 #define MAX_STRING_LENGTH 1000
 #define INC 1
@@ -72,6 +72,8 @@ FrameNode* loadProject(char* projectFilePath);
 void printMenu(void);
 
 int getIntInput(int minValue, int maxValue, char* errorMessage);
+
+void stringInput(char** buffer);
 
 void runGifEditor(void);
 
@@ -156,6 +158,27 @@ int getIntInput(int minValue, int maxValue, char* errorMessage)
 	return input;
 }
 
+/*
+	Function that gets char* input from the user. 
+	Input: buffer - a pointer to char* where the inputed data will be stored.
+	Output: None.
+*/
+void stringInput(char** buffer)
+{
+	if (*buffer)
+	{
+		free(*buffer);
+		*buffer = NULL;
+	}
+	*buffer = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
+	if (!*buffer)
+	{
+		printf("Memory allocation error!\n");
+		exit(MEMORY_ALLOCATION_ERROR_CODE);
+	}
+	improvedFgets(*buffer, MAX_STRING_LENGTH, stdin);
+}
+
 void runGifEditor(void)
 {
 	FrameNode* list = NULL;
@@ -174,6 +197,10 @@ void runGifEditor(void)
 		printf("Working on a new project.\n\n");
 		
 	}
+	else
+	{
+
+	}
 
 	do
 	{
@@ -191,26 +218,14 @@ void runGifEditor(void)
 			{
 				printf("*** Creating new frame ***\n");
 				printf("Please insert frame path:\n");
-				path = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
-				if (!path)
-				{
-					printf("Memory allocation error!\n");
-					exit(MEMORY_ALLOCATION_ERROR_CODE);
-				}
-				improvedFgets(path, MAX_STRING_LENGTH, stdin);
+				stringInput(&path);
 
 				printf("Please insert frame duration (in miliseconds):\n");
 				scanf("%u", &duration);
 				getchar();
 
 				printf("Please choose a name for that frame:\n");
-				name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
-				if (!name)
-				{
-					printf("Memory allocation error!\n");
-					exit(MEMORY_ALLOCATION_ERROR_CODE);
-				}
-				improvedFgets(name, MAX_STRING_LENGTH, stdin);
+				stringInput(&name);
 
 				if (!isFileExist(path))
 				{
@@ -220,17 +235,10 @@ void runGifEditor(void)
 				}
 				else
 				{
-					while (isFrameNameAlreadyExistsInList(list, name))
+					while (isFrameNameAlreadyExistsInList(list, name, NO_NOT_FOUND_MESSAGE))
 					{
-						free(name);
-						printf("The name is already taken, please enter another name\n");
-						name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
-						if (!name)
-						{
-							printf("Memory allocation error!\n");
-							exit(MEMORY_ALLOCATION_ERROR_CODE);
-						}
-						improvedFgets(name, MAX_STRING_LENGTH, stdin);
+						printf("The name is already taken, please enter another name:\n");
+						stringInput(&name);
 					}
 					frame = createFrame(name, duration, path);
 					insertFrameToList(&list, frame);
@@ -239,28 +247,16 @@ void runGifEditor(void)
 			else if (REMOVE_FRAME_OPTION == input)
 			{
 				printf("Enter the name of the frame to remove: \n");
-				name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
-				if (!name)
-				{
-					printf("Memory allocation error!\n");
-					exit(MEMORY_ALLOCATION_ERROR_CODE);
-				}
-				improvedFgets(name, MAX_STRING_LENGTH, stdin);
+				stringInput(&name);
 
 				removeFrameNodeFromList(&list, name);
 			}
 			else if (CHANGE_FRAME_POSITION_OPTION == input)
 			{
 				printf("Enter the name of the frame: \n");
-				name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
-				if (!name)
-				{
-					printf("Memory allocation error!\n");
-					exit(MEMORY_ALLOCATION_ERROR_CODE);
-				}
-				improvedFgets(name, MAX_STRING_LENGTH, stdin);
+				stringInput(&name);
 
-				if (isFrameNameAlreadyExistsInList(list, name))
+				if (isFrameNameAlreadyExistsInList(list, name, NOT_FOUND_MESSAGE))
 				{
 					printf("Enter the new index in the movie you wish to place the frame\n");
 					index = getIntInput(FIRST_NODE_INDEX, frameNodeListLength(list), CHANGE_INDEX_ERROR_MESSAGE);
@@ -276,13 +272,7 @@ void runGifEditor(void)
 			else if (CHANGE_FRAME_DURATION_OPTION == input)
 			{
 				printf("Enter the name of the frame: \n");
-				name = (char*)malloc(sizeof(char) * MAX_STRING_LENGTH);
-				if (!name)
-				{
-					printf("Memory allocation error!\n");
-					exit(MEMORY_ALLOCATION_ERROR_CODE);
-				}
-				improvedFgets(name, MAX_STRING_LENGTH, stdin);
+				stringInput(&name);
 				
 				printf("Enter the new duration:\n");
 				scanf("%u", &duration);
