@@ -53,7 +53,7 @@ typedef enum Options
 
 void improvedFgets(char* buffer, int maxCount, FILE* stream);
 
-bool isFileExist(const char* filePath);
+bool isFileExist(const char* filePath, const char* readMode);
 
 char* createFullPath(char* folderDirectory, char* projectFileName, char* extension);
 
@@ -92,12 +92,13 @@ void improvedFgets(char* buffer, int maxCount, FILE* stream)
 /*
 	Function that checks if file exists. 
 	Input: filePath - the path of the file to check if it exists. 
+		   readMode - the read mode of the file. 
 	Output: true if exists, else false.
 */
-bool isFileExist(const char* filePath)
+bool isFileExist(const char* filePath, const char* readMode)
 {
 	FILE* file = NULL;
-	file = fopen(filePath, FILE_READ_MODE);
+	file = fopen(filePath, readMode);
 	if (!file)
 	{
 		return false; 
@@ -308,6 +309,7 @@ void runGifEditor(void)
 	char* name = NULL;
 	char* folderDirectory = NULL;
 	char* projectName = NULL;
+	char* projectPath = NULL;
 	unsigned int duration = 0;
 	int input = 0;
 	int index = 0;
@@ -321,7 +323,16 @@ void runGifEditor(void)
 	}
 	else
 	{
-		list = loadProject("C:/Users/Magshimim/Desktop/photos/data.bin");
+		printf("Insert the project file path from which the data will be loaded:\n");
+		stringInput(&projectPath);
+		if (isFileExist(projectPath, READ_BINARY_MODE))
+		{
+			list = loadProject(projectPath);
+		}
+		else
+		{
+			printf("Error! Cannot open file, creating a new project!\n\n"); 
+		}
 	}
 
 	do
@@ -349,7 +360,7 @@ void runGifEditor(void)
 				printf("Please choose a name for that frame:\n");
 				stringInput(&name);
 
-				if (!isFileExist(path))
+				if (!isFileExist(path, FILE_READ_MODE))
 				{
 					printf("Can't find file! Frame will not be added\n");
 					free(path);
