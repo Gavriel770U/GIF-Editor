@@ -27,6 +27,9 @@
 #define ENTER "\n"
 #define NULL_CHAR '\0'
 #define FILE_READ_MODE "r"
+#define WRITE_BINARY_MODE "wb"
+#define READ_BINARY_MODE "rb"
+#define BIN_EXTENSION ".bin"
 
 #define PROJECT_OPTIONS_ERROR_MESSAGE "Invalid choice, try again:\n [0] Create a new project\n [1] Load existing project"
 #define CHANGE_INDEX_ERROR_MESSAGE "The movie contains less frames!\nEnter the new index in the movie you wish to place the frame\n"
@@ -46,20 +49,16 @@ typedef enum Options
 	CHANGE_FRAME_DURATION_OPTION = 4,
 	CHANGE_ALL_FRAMES_DURATION_OPTION = 5,
 	PRINT_ALL_FRAMES_LIST_OPTION = 6,  
-	PLAY_GIF_OPTION = 7
+	PLAY_GIF_OPTION = 7,
+	SAVE_PROJECT_OPTION = 8
 } Options;
 
 void improvedFgets(char* buffer, int maxCount, FILE* stream);
 
 bool isFileExist(const char* filePath);
 
-/*
-	Function that saves the project in the given directory.
-	Input: list - FrameNode* list of the frames data.
-		   directory - a folder directory in which it is possible to save the project.
-		   projectFileName - the file name of the project in which the data shall be saved.
-	Output: None.
-*/
+char* createFullPath(char* folderDirectory, char* projectFileName, char* extension);
+
 void saveProject(FrameNode* list, char* directory, char* projectFileName);
 
 /*
@@ -113,6 +112,61 @@ bool isFileExist(const char* filePath)
 	fclose(file);
 	file = NULL;
 	return true; 
+}
+
+/**
+*	Function that creates full path to a file using given folder directory, project file name and extenstion.
+*   Input: folderDirectory - the folder directory of the file.
+*			projectFileName - the file name of the project.
+*			extension - the file extesntion of the project.
+*	Output: full path that has been created according to given parameters.
+*/
+char* createFullPath(char* folderDirectory, char* projectFileName, char* extension)
+{
+	char* fullPath = NULL;
+	int totalLength = strlen(folderDirectory) + strlen(projectFileName) + strlen(extension) + INC;
+
+	fullPath = (char*)malloc(sizeof(char) * totalLength);
+	if (!fullPath)
+	{
+		printf("Memory allocation error!\n");
+		exit(MEMORY_ALLOCATION_ERROR_CODE);
+	}
+	fullPath[totalLength] = NULL_CHAR;
+
+	strcpy(fullPath, folderDirectory);
+	strcat(fullPath, projectFileName);
+	strcat(fullPath, extension);
+
+	return fullPath;
+}
+
+/*
+	Function that saves the project in the given directory.
+	Input: list - FrameNode* list of the frames data.
+		   directory - a folder directory in which it is possible to save the project.
+		   projectFileName - the file name of the project in which the data shall be saved.
+	Output: None.
+*/
+void saveProject(FrameNode* list, char* directory, char* projectFileName)
+{
+	FrameNode* current = list; 
+	FILE* file = NULL;
+	char* fullPath = createFullPath(directory, projectFileName, BIN_EXTENSION);
+	file = fopen(fullPath, WRITE_BINARY_MODE);
+	if (!file)
+	{
+		printf("Memory allocation error!\n");
+		exit(MEMORY_ALLOCATION_ERROR_CODE);
+	}
+
+	while (current) 
+	{
+		fprintf(file, "%s%u%s ", current->frame->name, current->frame->duration, current->frame->path);
+		current = current->next;
+	}
+
+	fclose(file);
 }
 
 /*
@@ -179,12 +233,19 @@ void stringInput(char** buffer)
 	improvedFgets(*buffer, MAX_STRING_LENGTH, stdin);
 }
 
+/**
+*	Function that runs the gif editors code.
+*	Input: None.
+*	Output: None.
+*/
 void runGifEditor(void)
 {
 	FrameNode* list = NULL;
 	Frame* frame = NULL;
 	char* path = NULL;
 	char* name = NULL;
+	char* folderDirectory = NULL;
+	char* projectName = NULL;
 	unsigned int duration = 0;
 	int input = 0;
 	int index = 0;
@@ -208,7 +269,7 @@ void runGifEditor(void)
 		scanf("%d", &input);
 		getchar();
 
-		if (input < EXIT_OPTION || input > PLAY_GIF_OPTION)
+		if (input < EXIT_OPTION || input > SAVE_PROJECT_OPTION)
 		{
 			printf("You should type one of the options - 0-8!\n");
 		}
@@ -295,6 +356,20 @@ void runGifEditor(void)
 			else if (PLAY_GIF_OPTION == input)
 			{
 				play(list);
+			}
+			else if (SAVE_PROJECT_OPTION == input)
+			{
+				printf("Enter folder directory to save the project in it: \n");
+				stringInput(&folderDirectory); 
+				printf("Enter name for the project file: \n");
+				stringInput(&projectName);
+
+				saveProject(list, folderDirectory, projectName);
+
+				free(folderDirectory); 
+				folderDirectory = NULL;
+				free(projectName);
+				projectName = NULL;
 			}
 		}
 		printf("\n");
