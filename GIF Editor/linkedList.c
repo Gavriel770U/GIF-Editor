@@ -249,6 +249,7 @@ void removeFrameNodeFromList(FrameNode** head, char* frameName)
 		free(temp);
 		return;
 	}
+	printf("No such frame with name %s\n", frameName);
 }
 
 /*
@@ -287,30 +288,13 @@ void deleteLastNode(FrameNode** head)
 }
 
 /*
-	Function that changes a FrameNode* position in a FrameNode* list by frame's property name and given position.
-	Input: head - pointer to FrameNode* list.
-		   frameName - the FrameNode* that has this frame name and has to be changed in position.
-		   newPosition - the new position of the FrameNode* in the list. 
-		   NOTE: the indexing starts from 1 to n, where n is the length of the list. 
-	Output: None.
-*/
-void changeFrameNodePosition(FrameNode** head, char* frameName, int newPosition)
-{
-	Frame* frame = NULL;
-	int currentPosition = isFrameNameAlreadyExistsInList(*head, frameName, NOT_FOUND_MESSAGE);
-	int count = 0;
-
-	removeFrameNodeFromList(*head, frameName);
-}
-
-/*
 	Function that changes a FrameNode* duration in a FrameNode* list by frame's property name and given new duration value.
 	Input: head - pointer to FrameNode* list.
 		   frameName - the FrameNode* that has this frame name to change its duration.
 		   newDuration - the new duration to set to the FrameNode* with given frame name. 
 	Output: None.
 */
-void changeFrameNodeDurationInList(FrameNode* head, FrameNode* frameName, unsigned int newDuration)
+void changeFrameNodeDurationInList(FrameNode* head, char* frameName, unsigned int newDuration)
 {
 	FrameNode* node = findFrameNodeByFrameNameInList(head, frameName);
 	if (node)
@@ -342,12 +326,120 @@ void changeAllFrameNodesDurationsInList(FrameNode* head, unsigned int newDuratio
 */
 void printFrameNodeList(FrameNode* head)
 {
-	FrameNode* current = head; 
+	FrameNode* current = head;
 	printf("                Name            Duration        Path\n");
 	while (current)
 	{
 		printf("                %s               %u ms        %s\n", current->frame->name, current->frame->duration, current->frame->path);
 		current = current->next;
 	}
-	printf("\n"); 
+	printf("\n");
+}
+
+/**
+	Function that inserts a given frame to FrameNode* list in a given k position.
+	Input: head - pointer to FrameNode* list head node.
+		   frame - frame to insert.
+		   k - index where to insert.
+	Output: None.
+*/
+void insertFrameAtPositionK(FrameNode** head, Frame* frame, int k)
+{
+	FrameNode* current = *head; 
+	FrameNode* toAdd = createFrameNode(frame); 
+	int i = 1;
+
+	if (FIRST_NODE_INDEX == k)
+	{
+		toAdd->next = *head; 
+		*head = toAdd; 
+		return;
+	}
+	for (i = 1; current && i < k; i++)
+	{
+		current = current->next;
+	}
+	if (current)
+	{
+		current->next = toAdd;
+	}
+}
+
+/**
+	Function that deletes FrameNode* in FrameNode* list in a given k position.
+	Input: head - pointer to FrameNode* list head node.
+		   k - index where to delete.
+	Output: None.
+*/
+void deleteFrameAtPositionK(FrameNode** head, int k)
+{
+	FrameNode* current = *head;
+	FrameNode* temp = NULL;
+	int i = 1; 
+
+	if (FIRST_NODE_INDEX == k)
+	{
+		*head = (*head)->next;
+		freeFrameNode(&current);
+		return;
+	}
+
+	for (i = 1; current && i < k; i++)
+	{
+		temp = current; 
+		current = current->next; 
+	}
+
+	if (current->next)
+	{
+		temp->next = current->next;
+	}
+	else
+	{
+		temp->next = NULL;
+	}
+	if (current)
+	{
+		freeFrameNode(&current);
+	}
+}
+
+/*
+	Function that changes a FrameNode* position in a FrameNode* list by frame's property name and given position.
+	Input: head - pointer to FrameNode* list.
+		   frameName - the FrameNode* that has this frame name and has to be changed in position.
+		   newPosition - the new position of the FrameNode* in the list.
+		   NOTE: the indexing starts from 1 to n, where n is the length of the list.
+	Output: None.
+*/
+void changeFrameNodePosition(FrameNode** head, char* frameName, int newPosition)
+{
+	Frame* saveFrame = NULL;
+	int listLength = frameNodeListLength(*head); 
+	int currentIndex = isFrameNameAlreadyExistsInList(*head, frameName, NOT_FOUND_MESSAGE);
+	FrameNode* toCopyData = findFrameNodeByFrameNameInList(*head, frameName);
+	
+	saveFrame = (Frame*)malloc(sizeof(Frame));
+	if (!saveFrame)
+	{
+		printf("Memory allocation error!\n");
+		exit(MEMORY_ALLOCATION_ERROR_CODE);
+	}
+
+	saveFrame = createFrame(toCopyData->frame->name, toCopyData->frame->duration, toCopyData->frame->path);
+
+	if (!currentIndex)
+	{
+		return;
+	}
+	if (currentIndex == newPosition)
+	{
+		return;
+	}
+	if (currentIndex < newPosition)
+	{
+		newPosition--;
+	}
+	deleteFrameAtPositionK(head, currentIndex);
+	insertFrameAtPositionK(head, saveFrame, newPosition);
 }

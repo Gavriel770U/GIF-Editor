@@ -50,12 +50,16 @@ void removeFrameNodeFromList(FrameNode** head, char* frameName);
 
 void deleteLastNode(FrameNode** head);
 
-void changeFrameNodePosition(FrameNode** head, char* frameName, int newPosition);
-
 void changeFrameNodeDurationInList(FrameNode* head, char* frameName, unsigned int newDuration);
 
 void changeAllFrameNodesDurationsInList(FrameNode* head, unsigned int newDuration);
 
 void printFrameNodeList(FrameNode* head);
+
+void insertFrameAtPositionK(FrameNode** head, Frame* frame, int k);
+
+void deleteFrameAtPositionK(FrameNode** head, int k);
+
+void changeFrameNodePosition(FrameNode** head, char* frameName, int newPosition);
 
 #endif

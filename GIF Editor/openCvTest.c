@@ -3,10 +3,6 @@
 *         openCV Template     	 *
 **********************************/
 
-/* TODO:
-* 1.5. change position of node function, I got stuck with this function at the end :(
-*/
-
 #define _CRT_SECURE_NO_WARNINGS
 #define CV_IGNORE_DEBUG_BUILD_GUARD
 
@@ -197,6 +193,7 @@ FrameNode* loadProject(char* projectFilePath)
 	FrameNode* current = list; 
 	FILE* file = NULL;
 	Frame* frame = NULL;
+	size_t nameLength = 0, pathLength = 0;
 
 	file = fopen(projectFilePath, READ_BINARY_MODE);
 	if (!file)
@@ -209,16 +206,19 @@ FrameNode* loadProject(char* projectFilePath)
 	while (!feof(file))
 	{
 		frame = (Frame*)malloc(sizeof(Frame));
+		if (!frame)
+		{
+			printf("Memory allocation error!\n");
+			exit(MEMORY_ALLOCATION_ERROR_CODE);
+		}
 
-		size_t nameLength = 0;
-		fread(&nameLength, sizeof(size_t), 1, file);
+		fread(&nameLength, sizeof(size_t), ONE_ELEMENT, file);
 		frame->name = malloc(nameLength);
 		fread(frame->name, sizeof(char), nameLength, file);
 
-		fread(&(frame->duration), sizeof(unsigned int), 1, file);
+		fread(&(frame->duration), sizeof(unsigned int), ONE_ELEMENT, file);
 
-		size_t pathLength = 0;
-		fread(&pathLength, sizeof(size_t), 1, file);
+		fread(&pathLength, sizeof(size_t), ONE_ELEMENT, file);
 		frame->path = malloc(pathLength);
 		fread(frame->path, sizeof(char), pathLength, file);
 
@@ -328,6 +328,7 @@ void runGifEditor(void)
 		if (isFileExist(projectPath, READ_BINARY_MODE))
 		{
 			list = loadProject(projectPath);
+			free(projectPath);
 		}
 		else
 		{
