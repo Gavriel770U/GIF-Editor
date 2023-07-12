@@ -48,6 +48,8 @@ FrameNode* findFrameNodeByFrameNameInList(FrameNode* head, char* frameName);
 
 void removeFrameNodeFromList(FrameNode** head, char* frameName);
 
+void deleteLastNode(FrameNode** head);
+
 void changeFrameNodePosition(FrameNode** head, char* frameName, int newPosition);
 
 void changeFrameNodeDurationInList(FrameNode* head, char* frameName, unsigned int newDuration);

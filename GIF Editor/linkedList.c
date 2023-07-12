@@ -252,6 +252,41 @@ void removeFrameNodeFromList(FrameNode** head, char* frameName)
 }
 
 /*
+	Function that deletes the last node of a FrameNode* list. 
+	Input: head - pointer to FrameNode* list head node.
+	Output: None.
+*/
+void deleteLastNode(FrameNode** head)
+{
+	FrameNode* current = *head;
+	FrameNode* previous = NULL;
+
+	if (!*head)
+	{
+		printf("List is empty. Unable to delete last node.\n");
+		return;
+	}
+
+	if (!(*head)->next)
+	{
+		free((*head)->frame);
+		free(*head);
+		*head = NULL;
+		return;
+	}
+
+	while (current->next != NULL)
+	{
+		previous = current;
+		current = current->next;
+	}
+
+	free(current->frame);
+	free(current);
+	previous->next = NULL;
+}
+
+/*
 	Function that changes a FrameNode* position in a FrameNode* list by frame's property name and given position.
 	Input: head - pointer to FrameNode* list.
 		   frameName - the FrameNode* that has this frame name and has to be changed in position.

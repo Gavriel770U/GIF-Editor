@@ -4,10 +4,7 @@
 **********************************/
 
 /* TODO:
-* 1.4. reduce the amount of code needed for frame insert in the editor's loop
 * 1.5. change position of node function, I got stuck with this function at the end :(
-* 2. save project
-* 3. load project
 */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -24,6 +21,7 @@
 
 #define MAX_STRING_LENGTH 1000
 #define INC 1
+#define ONE_ELEMENT 1
 #define ENTER "\n"
 #define NULL_CHAR '\0'
 #define FILE_READ_MODE "r"
@@ -61,11 +59,6 @@ char* createFullPath(char* folderDirectory, char* projectFileName, char* extensi
 
 void saveProject(FrameNode* list, char* directory, char* projectFileName);
 
-/*
-	Function that loads a project and returns FrameNode* list that consists of the loaded frames data.
-	Input: projectFilePath - the file path of the project to load.
-	Output: FrameNode* list of the frames of the project. 
-*/
 FrameNode* loadProject(char* projectFilePath);
 
 void printMenu(void);
@@ -141,6 +134,28 @@ char* createFullPath(char* folderDirectory, char* projectFileName, char* extensi
 	return fullPath;
 }
 
+/**
+*	Function that writes frame data to the file that saves the project in a file,
+*	so it will be possible to load this project in the future.
+*	Input: frame - the frame to write into the file. 
+*		   file - the file in which the frame data will be stored.
+*	Output: None.
+*/
+void writeFrameToFile(const Frame* frame, FILE* file)
+{
+	size_t nameLength = 0, pathLength = 0;
+	
+	nameLength = strlen(frame->name) + INC;
+	fwrite(&nameLength, sizeof(size_t), ONE_ELEMENT, file);
+	fwrite(frame->name, sizeof(char), nameLength, file);
+
+	fwrite(&(frame->duration), sizeof(unsigned int), ONE_ELEMENT, file);
+
+	pathLength = strlen(frame->path) + INC;
+	fwrite(&pathLength, sizeof(size_t), ONE_ELEMENT, file);
+	fwrite(frame->path, sizeof(char), pathLength, file);
+}
+
 /*
 	Function that saves the project in the given directory.
 	Input: list - FrameNode* list of the frames data.
@@ -154,19 +169,66 @@ void saveProject(FrameNode* list, char* directory, char* projectFileName)
 	FILE* file = NULL;
 	char* fullPath = createFullPath(directory, projectFileName, BIN_EXTENSION);
 	file = fopen(fullPath, WRITE_BINARY_MODE);
+
 	if (!file)
 	{
-		printf("Memory allocation error!\n");
+		printf("Could not open file!\n");
 		exit(MEMORY_ALLOCATION_ERROR_CODE);
 	}
 
 	while (current) 
 	{
-		fprintf(file, "%s%u%s ", current->frame->name, current->frame->duration, current->frame->path);
+		writeFrameToFile(current->frame, file);
 		current = current->next;
 	}
 
 	fclose(file);
+}
+
+/*
+	Function that loads a project and returns FrameNode* list that consists of the loaded frames data.
+	Input: projectFilePath - the file path of the project to load.
+	Output: FrameNode* list of the frames of the project.
+*/
+FrameNode* loadProject(char* projectFilePath)
+{
+	FrameNode* list = NULL;
+	FrameNode* current = list; 
+	FILE* file = NULL;
+	Frame* frame = NULL;
+
+	file = fopen(projectFilePath, READ_BINARY_MODE);
+	if (!file)
+	{
+		printf("Could not open file!\n");
+		exit(MEMORY_ALLOCATION_ERROR_CODE);
+	}
+
+	// Read the frames from the file
+	while (!feof(file))
+	{
+		frame = (Frame*)malloc(sizeof(Frame));
+
+		size_t nameLength = 0;
+		fread(&nameLength, sizeof(size_t), 1, file);
+		frame->name = malloc(nameLength);
+		fread(frame->name, sizeof(char), nameLength, file);
+
+		fread(&(frame->duration), sizeof(unsigned int), 1, file);
+
+		size_t pathLength = 0;
+		fread(&pathLength, sizeof(size_t), 1, file);
+		frame->path = malloc(pathLength);
+		fread(frame->path, sizeof(char), pathLength, file);
+
+		insertFrameToList(&list, frame);
+	}
+
+	// delete the last node that contains trash information.
+	deleteLastNode(&list);
+
+	fclose(file); 
+	return list; 
 }
 
 /*
@@ -256,11 +318,10 @@ void runGifEditor(void)
 	if (NEW_PROJECT_OPTION == input)
 	{
 		printf("Working on a new project.\n\n");
-		
 	}
 	else
 	{
-
+		list = loadProject("C:/Users/Magshimim/Desktop/photos/data.bin");
 	}
 
 	do
